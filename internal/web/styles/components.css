@@ -1,0 +1,88 @@
+.os-list,
+.cpu-list,
+.mem-list,
+.storage-list {
+	display: grid;
+	gap: 0.3rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	font-size: 0.95rem;
+}
+
+.os-list li strong,
+.cpu-list li strong,
+.mem-list li strong,
+.storage-list li strong,
+.sensor-adapter strong,
+.mem-line strong,
+.storage-line strong {
+	color: var(--muted-text-color);
+	margin-right: 0.25rem;
+	font-weight: 500;
+}
+
+.os-block,
+.cpu-block,
+.mem-block,
+.storage-block {
+	display: grid;
+	gap: 1rem;
+}
+
+.os-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.os-name {
+	font-weight: 600;
+	font-size: 1.15rem;
+	color: var(--text-color);
+	white-space: nowrap;
+}
+
+.os-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+}
+
+.os-icon svg {
+	width: 100%;
+	height: 100%;
+	fill: var(--text-color);
+}
+
+.sensor-block {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.sensor-name {
+	font-weight: 600;
+	font-size: 1.15rem;
+	color: var(--text-color);
+	white-space: nowrap;
+	margin: 0;
+}
+
+.sensor-list {
+	display: grid;
+	padding: 0;
+	list-style: none;
+}
+
+.sensor-list li strong {
+	color: var(--muted-text-color);
+	font-weight: 500;
+}
+
+.mem-error,
+.storage-error {
+	color: var(--error-color);
+	font-weight: bold;
+}

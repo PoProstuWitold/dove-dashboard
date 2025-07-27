@@ -1,0 +1,65 @@
+.site-header {
+	background-color: var(--secondary-color);
+	color: var(--text-color);
+	text-align: center;
+	padding-block: 2rem;
+}
+
+.site-header .title {
+	font-size: 2rem;
+}
+
+.site-header .subtitle {
+	font-size: 1.5rem;
+	color: var(--muted-text-color);
+}
+
+.logo-title {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.75rem;
+	margin-bottom: 0.5rem;
+	flex-wrap: wrap;
+	text-align: center;
+}
+
+.dove-logo {
+	width: 40px;
+	height: 40px;
+	object-fit: contain;
+}
+
+.card {
+	background-color: var(--secondary-color);
+	color: var(--text-color);
+	border: 1px solid var(--border-color);
+	border-radius: 12px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+	width: 100%;
+	max-width: 600px;
+	padding-block: 1.5rem;
+	padding-inline: clamp(1rem, 5vw, 2rem);
+	box-sizing: border-box;
+
+	/* skeleton animation */
+	opacity: 0;
+	transform: scale(0.98);
+	pointer-events: none;
+	transition: opacity 0.4s ease, transform 0.3s ease;
+}
+
+.card h2 {
+	font-size: 1.25rem;
+	margin-bottom: 1rem;
+	padding-bottom: 0.5rem;
+	border-bottom: 2px solid var(--text-color);
+}
+
+.card pre {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	font-family: 'Fira Code', monospace;
+	color: var(--text-color);
+}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>The Dove Dashboard</title>
+	<link rel="apple-touch-icon" sizes="180x180" href="public/img/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="public/img/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="public/img/favicon-16x16.png">
+	<link rel="manifest" href="public/site.webmanifest">
+	<link rel="shortcut icon" href="public/favicon.ico">
+	<link rel="stylesheet" href="styles/main.css" />
+</head>
+
+<body>
+	<header class="site-header">
+		<div class="logo-title">
+			<img src="public/img/favicon-32x32.png" alt="Dove logo" class="dove-logo" />
+			<h1 class="title">The Dove Dashboard</h1>
+		</div>
+		<p class="subtitle">Essential system stats, peacefully simple.</p>
+	</header>
+
+	<main>
+		<section id="os" class="card loading">
+			<h2>Operating System</h2>
+			<pre id="os-data">
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+			</pre>
+		</section>
+
+		<section id="cpu" class="card loading">
+			<h2>CPU</h2>
+			<pre id="cpu-data">
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+			</pre>
+		</section>
+
+		<section id="mem" class="card loading">
+			<h2>Memory</h2>
+			<pre id="mem-data">
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+			</pre>
+		</section>
+
+		<section id="storage" class="card loading">
+			<h2>Storage</h2>
+			<pre id="storage-data">
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+			</pre>
+		</section>
+
+		<section id="sensors" class="card loading">
+			<h2>Sensors</h2>
+			<pre id="sensors-data">
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+				<div class="skeleton-line"></div>
+			</pre>
+		</section>
+	</main>
+
+	<script type="module" src="main.mjs"></script>
+</body>
+
+</html>

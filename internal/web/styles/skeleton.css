@@ -1,0 +1,25 @@
+.skeleton-line {
+	height: 1rem;
+	margin-block: 0.4rem;
+	border-radius: 6px;
+	background: linear-gradient(90deg, var(--bg-color) 25%, var(--hover-color) 50%, var(--bg-color) 75%);
+	background-size: 200% 100%;
+	animation: shimmer 1.2s infinite linear;
+}
+
+@keyframes shimmer {
+	0% { background-position: -200% 0; }
+	100% { background-position: 200% 0; }
+}
+
+.card.loading {
+	opacity: 0.5;
+	transform: scale(0.98);
+	pointer-events: none;
+}
+
+.card.loaded {
+	opacity: 1;
+	transform: scale(1);
+	pointer-events: auto;
+}
