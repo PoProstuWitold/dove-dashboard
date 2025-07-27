@@ -71,6 +71,17 @@ class DoveDashUI {
 	}
 
 	/**
+	* Formats a time difference in seconds into a human-readable string
+	* @param {number} secondsAgo
+	* @returns {string}
+	*/
+	static formatTimeAgo(secondsAgo) {
+		if (secondsAgo <= 60) return 'less than a minute ago'
+		const minutes = Math.floor(secondsAgo / 60)
+		return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`
+	}
+
+	/**
 	* Downloads data from the given endpoint and formats it using the provided formatter function
 	* @template T
 	* @param {string} endpoint
@@ -80,12 +91,17 @@ class DoveDashUI {
 	*/
 	static async fetchAndDisplay(endpoint, elementId, formatter) {
 		try {
+			const el = document.getElementById(elementId)
+			if (!el.dataset.loaded) {
+				el.innerHTML = `<p class="info-line">Loading data...</p>`
+			}
+
 			const res = await fetch(endpoint)
 			const data = await res.json()
 			const formatted = await formatter(data)
 
-			const el = document.getElementById(elementId)
 			el.innerHTML = formatted
+			el.dataset.loaded = true
 
 			const section = el.closest('section')
 			if (section) {
@@ -94,7 +110,7 @@ class DoveDashUI {
 			}
 		} catch (err) {
 			const el = document.getElementById(elementId)
-			el.innerHTML = `<p class="error">Error loading data</p>`
+			el.innerHTML = `<p class="error-line">Error loading data</p>`
 			console.error(err)
 		}
 	}
@@ -108,17 +124,17 @@ class DoveDashUI {
 		const iconUrl = `https://raw.githubusercontent.com/lukas-w/font-logos/refs/heads/master/vectors/${data.id}.svg`
 		const svg = await DoveDashUI.inlineSVG(iconUrl)
 		return DoveDashUI.dedent(`
-		<div class="os-block">
-			<div class="os-header">
-				<div class="os-icon">${svg}</div>
-				<span class="os-name">${data.os}</span>
+		<div class="info-block">
+			<div class="info-header">
+				<div class="info-icon">${svg}</div>
+				<span class="info-name">${data.os}</span>
 			</div>
-			<ul class="os-list">
-				<li><strong>Architecture:</strong> ${data.arch}</li>
-				<li><strong>Kernel:</strong> ${data.kernel}</li>
-				<li><strong>Uptime:</strong> ${data.uptime}</li>
-				<li><strong>Hostname:</strong> ${data.hostname}</li>
-			</ul>
+			<div class="info-list">
+				<p class="info-line"><strong>Architecture:</strong> ${data.arch}</p>
+				<p class="info-line"><strong>Kernel:</strong> ${data.kernel}</p>
+				<p class="info-line"><strong>Uptime:</strong> ${data.uptime}</p>
+				<p class="info-line"><strong>Hostname:</strong> ${data.hostname}</p>
+			</div>
 		</div>
 		`)
 	}
@@ -130,13 +146,13 @@ class DoveDashUI {
 	*/
 	static formatCPU(data) {
 		return DoveDashUI.dedent(`
-		<ul class="cpu-list">
-			<li><strong>Brand:</strong> ${data.brand}</li>
-			<li><strong>Model:</strong> ${data.model}</li>
-			<li><strong>Cores:</strong> ${data.cores}</li>
-			<li><strong>Threads:</strong> ${data.threads}</li>
-			<li><strong>Frequency:</strong> ${data.frequency} GHz</li>
-		</ul>
+			<div class="info-list">
+				<p class="info-line"><strong>Brand:</strong> ${data.brand}</p>
+				<p class="info-line"><strong>Model:</strong> ${data.model}</p>
+				<p class="info-line"><strong>Cores:</strong> ${data.cores}</p>
+				<p class="info-line"><strong>Threads:</strong> ${data.threads}</p>
+				<p class="info-line"><strong>Frequency:</strong> ${data.frequency} GHz</p>
+			</div>
 		`)
 	}
 
@@ -146,13 +162,11 @@ class DoveDashUI {
 	* @returns {string}
 	*/
 	static formatMem(data) {
-		if (!data) return `<p class="mem-error">No memory data</p>`
-
 		const used = isFinite(data.usedMB) ? DoveDashUI.toGB(data.usedMB) : '?'
 		const total = isFinite(data.totalMB) ? DoveDashUI.toGB(data.totalMB) : '?'
 		const percent = isFinite(data.usedPercent) ? data.usedPercent.toFixed(0) : '?'
 
-		return `<p class="mem-line"><strong>Usage:</strong> ${used} GB / ${total} GB (${percent}%)</p>`
+		return `<p class="info-line"><strong>Usage:</strong> ${used} GB / ${total} GB (${percent}%)</p>`
 	}
 
 	/**
@@ -161,15 +175,13 @@ class DoveDashUI {
 	* @returns {string}
 	*/
 	static formatStorage(data) {
-		if (!data) return `<p class="storage-error">No storage data</p>`
-
 		const used = isFinite(data.usedMB) ? DoveDashUI.toGB(data.usedMB) : '?'
 		const total = isFinite(data.totalMB) ? DoveDashUI.toGB(data.totalMB) : '?'
 		const percent = isFinite(data.usedPercent) ? data.usedPercent.toFixed(2) : '?'
 		const mount = data.mountpoint || '/'
 		const fs = data.fsType || 'unknown'
 
-		return `<p class="storage-line"><strong>Disk (${mount}):</strong> ${used} GB / ${total} GB (${percent}%) – ${fs}</p>`
+		return `<p class="info-line"><strong>Disk (${mount}):</strong> ${used} GB / ${total} GB (${percent}%) - ${fs}</p>`
 	}
 
 	/**
@@ -179,14 +191,39 @@ class DoveDashUI {
 	*/
 	static formatSensors(data) {
 		return data.map(chip => DoveDashUI.dedent(`
-		<div class="sensor-block">
-			<h3 class="sensor-name">${chip.name}</h3>
-			<p class="sensor-adapter"><strong>Adapter:</strong> ${chip.adapter}</p>
-			<ul class="sensor-list">
-				${chip.readings.map(r => `<li><strong>${r.label}:</strong> ${r.value.toFixed(1)} ${r.unit || ''} ${r.extra || ''}</li>`).join('')}
-			</ul>
+		<div class="info-block">
+			<h3 class="info-name">${chip.name}</h3>
+			<p class="info-line"><strong>Adapter:</strong> ${chip.adapter}</p>
+			<div class="info-list">
+				${chip.readings.map(r => `<p class="info-line"><strong>${r.label}:</strong> ${r.value.toFixed(1)} ${r.unit || ''} ${r.extra || ''}</p>`).join('')}
+			</div>
 		</div>
 		`)).join('')
+	}
+
+	/**
+	* Formats the network data into HTML
+	* @param {NetStats[]} data
+	* @returns {string}
+	*/
+	static formatNet(data) {
+		const net = data[0]
+
+		const down = net.speedDownMbps.toFixed(2)
+		const up = net.speedUpMbps.toFixed(2)
+		const timeAgo = DoveDashUI.formatTimeAgo(Math.floor((Date.now() - new Date(net.lastBenchmark)) / 1000))
+		const interfaceBandwidth = net.bandwidth >= 1000
+			? `${(net.bandwidth / 1000).toFixed(1)} Gb/s`
+			: `${net.bandwidth.toFixed(1)} Mb/s`
+
+		return DoveDashUI.dedent(`
+			<div class="info-list">
+				<p class="info-line"><strong>Interface:</strong> ${net.name} (${net.type})</p>
+				<p class="info-line"><strong>Bandwidth:</strong> ${interfaceBandwidth} </p>
+				<p class="info-line"><strong>Download/Upload:</strong> ↓ ${down} Mb/s / ↑ ${up} Mb/s </p>
+				<p class="info-line"><strong>Last benchmark:</strong> ${new Date(net.lastBenchmark).toLocaleString('en-GB')} (${timeAgo})</p>
+			</div>
+		`)
 	}
 
 	/**
@@ -199,6 +236,7 @@ class DoveDashUI {
 		DoveDashUI.fetchAndDisplay('/api/mem', 'mem-data', DoveDashUI.formatMem)
 		DoveDashUI.fetchAndDisplay('/api/storage', 'storage-data', DoveDashUI.formatStorage)
 		DoveDashUI.fetchAndDisplay('/api/sensors', 'sensors-data', DoveDashUI.formatSensors)
+		DoveDashUI.fetchAndDisplay('/api/net', 'net-data', DoveDashUI.formatNet)
 	}
 }
 

@@ -8,18 +8,21 @@
 }
 
 @keyframes shimmer {
-	0% { background-position: -200% 0; }
-	100% { background-position: 200% 0; }
+	0% {
+		background-position: -200% 0;
+	}
+
+	100% {
+		background-position: 200% 0;
+	}
 }
 
 .card.loading {
 	opacity: 0.5;
-	transform: scale(0.98);
 	pointer-events: none;
 }
 
 .card.loaded {
 	opacity: 1;
-	transform: scale(1);
 	pointer-events: auto;
 }
