@@ -181,7 +181,12 @@ class DoveDashUI {
 		const mount = data.mountpoint || '/'
 		const fs = data.fsType || 'unknown'
 
-		return `<p class="info-line"><strong>Disk (${mount}):</strong> ${used} GB / ${total} GB (${percent}%) - ${fs}</p>`
+		return DoveDashUI.dedent(`
+			<div class="info-list">
+				<p class="info-line"><strong>Type and filesystem:</strong> ${data.type}, ${fs}</p>
+				<p class="info-line"><strong>Disk (${mount}):</strong> ${used} GB / ${total} GB (${percent}%)</p>
+			</div>
+		`)
 	}
 
 	/**
@@ -241,4 +246,4 @@ class DoveDashUI {
 }
 
 DoveDashUI.refreshAll()
-setInterval(() => DoveDashUI.refreshAll(), 5000)
+setInterval(() => DoveDashUI.refreshAll(), 10000)

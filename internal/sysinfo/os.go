@@ -2,7 +2,6 @@ package sysinfo
 
 import (
 	"fmt"
-	"os/exec"
 	"runtime"
 	"strings"
 	"time"
@@ -31,28 +30,28 @@ func GetOSInfo() OSInfo {
 }
 
 func getKernelVersion() string {
-	out, err := exec.Command("uname", "-r").Output()
+	data, err := ReadHostOrDefault("/proc/sys/kernel/osrelease")
 	if err != nil {
 		return "Unknown"
 	}
-	return strings.TrimSpace(string(out))
+	return strings.TrimSpace(string(data))
 }
 
 func getHostname() string {
-	out, err := exec.Command("hostname").Output()
+	data, err := ReadHostOrDefault("/etc/hostname")
 	if err != nil {
 		return "Unknown"
 	}
-	return strings.TrimSpace(string(out))
+	return strings.TrimSpace(string(data))
 }
 
 func getOSInfoFields() (name, id string) {
-	out, err := exec.Command("cat", "/etc/os-release").Output()
+	data, err := ReadHostOrDefault("/etc/os-release")
 	if err != nil {
 		return "Unknown OS", "unknown"
 	}
 
-	lines := strings.SplitSeq(string(out), "\n")
+	lines := strings.SplitSeq(string(data), "\n")
 	for line := range lines {
 		if strings.HasPrefix(line, "PRETTY_NAME=") {
 			name = strings.Trim(strings.SplitN(line, "=", 2)[1], `"`)
@@ -72,20 +71,19 @@ func getOSInfoFields() (name, id string) {
 }
 
 func getArch() string {
-	arch := runtime.GOARCH
-	if arch == "amd64" {
+	if runtime.GOARCH == "amd64" {
 		return "x64"
 	}
-	return arch
+	return runtime.GOARCH
 }
 
 func getUptime() string {
-	out, err := exec.Command("cat", "/proc/uptime").Output()
+	data, err := ReadHostOrDefault("/proc/uptime")
 	if err != nil {
 		return "Unknown"
 	}
 
-	fields := strings.Fields(string(out))
+	fields := strings.Fields(string(data))
 	if len(fields) == 0 {
 		return "Unknown"
 	}

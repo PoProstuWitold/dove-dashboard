@@ -2,11 +2,9 @@ package sysinfo
 
 import (
 	"log"
-	"os"
-	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
+	"syscall"
 )
 
 type StorageInfo struct {
@@ -21,44 +19,55 @@ type StorageInfo struct {
 }
 
 func GetStorageInfo() StorageInfo {
-	out, err := exec.Command("df", "-T", "-m", "/").Output()
+	var stat syscall.Statfs_t
+	err := syscall.Statfs(ResolveHostPath("/"), &stat)
 	if err != nil {
-		log.Println("df command error:", err)
+		log.Println("statfs error:", err)
 		return StorageInfo{}
 	}
 
-	lines := strings.Split(string(out), "\n")
-	if len(lines) < 2 {
-		log.Println("df output too short:", lines)
-		return StorageInfo{}
-	}
-
-	fields := strings.Fields(lines[1])
-	if len(fields) < 7 {
-		log.Println("unexpected df field count:", fields)
-		return StorageInfo{}
-	}
-
-	total, err1 := strconv.ParseUint(fields[2], 10, 64)
-	used, err2 := strconv.ParseUint(fields[3], 10, 64)
-	free, err3 := strconv.ParseUint(fields[4], 10, 64)
-	if err1 != nil || err2 != nil || err3 != nil || total == 0 {
-		log.Println("failed to parse storage values:", fields)
-		return StorageInfo{}
-	}
-
+	total := stat.Blocks * uint64(stat.Bsize) / 1024 / 1024
+	free := stat.Bfree * uint64(stat.Bsize) / 1024 / 1024
+	used := total - free
 	usedPercent := (float64(used) / float64(total)) * 100
 
+	device, fsType := findRealRootMount()
+
 	return StorageInfo{
-		Device:      fields[0],
-		FSType:      fields[1],
+		Device:      device,
+		Mountpoint:  "/",
+		FSType:      fsType,
+		Type:        detectDiskType(device),
 		TotalMB:     total,
 		UsedMB:      used,
 		FreeMB:      free,
 		UsedPercent: usedPercent,
-		Mountpoint:  fields[6],
-		Type:        detectDiskType(fields[0]),
 	}
+}
+
+func findRealRootMount() (string, string) {
+	mountData, err := ReadHostOrDefault("/proc/mounts")
+	if err != nil {
+		log.Println("mounts read error:", err)
+		return "/dev/root", "unknown"
+	}
+
+	lines := strings.Split(string(mountData), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 3 && (fields[1] == "/" || fields[1] == "/mnt/host") && !strings.HasPrefix(fields[0], "overlay") {
+			return fields[0], fields[2]
+		}
+	}
+
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 3 && !strings.HasPrefix(fields[2], "overlay") && !strings.HasPrefix(fields[2], "tmpfs") {
+			return fields[0], fields[2]
+		}
+	}
+
+	return "/dev/root", "unknown"
 }
 
 func detectDiskType(device string) string {
@@ -68,19 +77,26 @@ func detectDiskType(device string) string {
 		return "Unknown (LVM)"
 	}
 
-	for len(devName) > 0 && devName[len(devName)-1] >= '0' && devName[len(devName)-1] <= '9' {
-		devName = devName[:len(devName)-1]
+	for {
+		if len(devName) > 0 && devName[len(devName)-1] >= '0' && devName[len(devName)-1] <= '9' {
+			devName = devName[:len(devName)-1]
+		} else if strings.HasSuffix(devName, "p") {
+			devName = devName[:len(devName)-1]
+		} else {
+			break
+		}
 	}
 
 	if strings.HasPrefix(devName, "nvme") {
 		return "NVMe"
 	}
 
-	rotationalPath := "/sys/block/" + devName + "/queue/rotational"
-	data, err := os.ReadFile(rotationalPath)
+	rotationalPath := ResolveHostPath("/sys/block/" + devName + "/queue/rotational")
+	data, err := ReadHostOrDefault(rotationalPath)
 	if err != nil {
 		return "Unknown"
 	}
+
 	switch strings.TrimSpace(string(data)) {
 	case "0":
 		return "SSD"

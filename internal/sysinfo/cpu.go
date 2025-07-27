@@ -3,7 +3,6 @@ package sysinfo
 import (
 	"fmt"
 	"math"
-	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -33,28 +32,27 @@ func GetCPUInfo() CPUInfo {
 }
 
 func getCPUBrandAndModel() (string, string) {
-	out, err := exec.Command("lscpu").Output()
+	data, err := ReadHostOrDefault("/proc/cpuinfo")
 	if err != nil {
 		return "Unknown", "Unknown"
 	}
-	for line := range strings.SplitSeq(string(out), "\n") {
-		if strings.HasPrefix(line, "Model name:") {
-			full := strings.TrimSpace(strings.SplitN(line, ":", 2)[1])
 
+	for line := range strings.SplitSeq(string(data), "\n") {
+		if strings.HasPrefix(line, "model name") {
+			full := strings.TrimSpace(strings.SplitN(line, ":", 2)[1])
 			words := strings.Fields(full)
 			if len(words) > 1 {
-				brand := words[0]
-				model := strings.Join(words[1:], " ")
-				return brand, model
+				return words[0], strings.Join(words[1:], " ")
 			}
 			return full, ""
 		}
 	}
+
 	return "Unknown", "Unknown"
 }
 
 func getCPUClock() string {
-	out, err := exec.Command("cat", "/proc/cpuinfo").Output()
+	out, err := ReadHostOrDefault("/proc/cpuinfo")
 	if err != nil {
 		return "0.0"
 	}
