@@ -66,8 +66,16 @@ class DoveDashUI {
 	* @returns {Promise<string>}
 	*/
 	static async inlineSVG(url) {
-		const res = await fetch(url)
-		return await res.text()
+		try {
+			let res = await fetch(url)
+			if (!res.ok) {
+				console.warn(`[inlineSVG] Primary failed (${res.status}), using fallback`)
+				res = await fetch('public/icons/tux.svg')
+			}
+			return await res.text()
+		} catch (err) {
+			console.error('[inlineSVG] Both primary and fallback failed', err)
+		}
 	}
 
 	/**
@@ -123,19 +131,20 @@ class DoveDashUI {
 	static async formatOS(data) {
 		const iconUrl = `https://raw.githubusercontent.com/lukas-w/font-logos/refs/heads/master/vectors/${data.id}.svg`
 		const svg = await DoveDashUI.inlineSVG(iconUrl)
+
 		return DoveDashUI.dedent(`
-		<div class="info-block">
-			<div class="info-header">
-				<div class="info-icon">${svg}</div>
-				<span class="info-name">${data.os}</span>
+			<div class="info-block">
+				<div class="info-header">
+					<div class="info-icon">${svg}</div>
+					<span class="info-name">${data.os}</span>
+				</div>
+				<div class="info-list">
+					<p class="info-line"><strong>Architecture:</strong> ${data.arch}</p>
+					<p class="info-line"><strong>Kernel:</strong> ${data.kernel}</p>
+					<p class="info-line"><strong>Uptime:</strong> ${data.uptime}</p>
+					<p class="info-line"><strong>Hostname:</strong> ${data.hostname}</p>
+				</div>
 			</div>
-			<div class="info-list">
-				<p class="info-line"><strong>Architecture:</strong> ${data.arch}</p>
-				<p class="info-line"><strong>Kernel:</strong> ${data.kernel}</p>
-				<p class="info-line"><strong>Uptime:</strong> ${data.uptime}</p>
-				<p class="info-line"><strong>Hostname:</strong> ${data.hostname}</p>
-			</div>
-		</div>
 		`)
 	}
 
@@ -147,10 +156,8 @@ class DoveDashUI {
 	static formatCPU(data) {
 		return DoveDashUI.dedent(`
 			<div class="info-list">
-				<p class="info-line"><strong>Brand:</strong> ${data.brand}</p>
-				<p class="info-line"><strong>Model:</strong> ${data.model}</p>
-				<p class="info-line"><strong>Cores:</strong> ${data.cores}</p>
-				<p class="info-line"><strong>Threads:</strong> ${data.threads}</p>
+				<p class="info-line"><strong>Name:</strong> ${data.name}</p>
+				<p class="info-line"><strong>Cores/Threads:</strong> ${data.cores}/${data.threads}</p>
 				<p class="info-line"><strong>Frequency:</strong> ${data.frequency} GHz</p>
 			</div>
 		`)
@@ -195,15 +202,19 @@ class DoveDashUI {
 	* @returns {string}
 	*/
 	static formatSensors(data) {
-		return data.map(chip => DoveDashUI.dedent(`
-		<div class="info-block">
-			<h3 class="info-name">${chip.name}</h3>
-			<p class="info-line"><strong>Adapter:</strong> ${chip.adapter}</p>
-			<div class="info-list">
-				${chip.readings.map(r => `<p class="info-line"><strong>${r.label}:</strong> ${r.value.toFixed(1)} ${r.unit || ''} ${r.extra || ''}</p>`).join('')}
+		return DoveDashUI.dedent(`
+			<div class="sensors-list">
+				${data.map(chip => `
+					<div class="info-block">
+						<div class="info-list">
+							<h3 class="info-name">${chip.name}</h3>
+							<p class="info-line"><strong>Adapter:</strong> ${chip.adapter}</p>
+							${chip.readings.map(r => `<p class="info-line"><strong>${r.label}:</strong> ${r.value.toFixed(1)} ${r.unit || ''} ${r.extra || ''}</p>`).join('')}
+						</div>
+					</div>
+				`).join('')}
 			</div>
-		</div>
-		`)).join('')
+		`)
 	}
 
 	/**

@@ -49,6 +49,20 @@
 	fill: var(--text-color);
 }
 
+.sensors-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.sensors-list .info-block {
+    padding: 0.5rem 0;
+    border-bottom: 3px solid var(--border-color);
+}
+
+.sensors-list .info-block:last-child {
+    border-bottom: none;
+}
+
 .error-line {
 	color: var(--error-color);
 	font-weight: bold;

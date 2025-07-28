@@ -2,6 +2,7 @@ package sysinfo
 
 import (
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -73,8 +74,10 @@ func findRealRootMount() (string, string) {
 func detectDiskType(device string) string {
 	devName := filepath.Base(device)
 
-	if strings.HasPrefix(devName, "mapper/") {
-		return "Unknown (LVM)"
+	if strings.HasPrefix(devName, "root") {
+		if target, err := os.Readlink(ResolveHostPath("/dev/" + devName)); err == nil {
+			devName = filepath.Base(target)
+		}
 	}
 
 	for {
