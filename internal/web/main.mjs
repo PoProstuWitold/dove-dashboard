@@ -209,7 +209,16 @@ class DoveDashUI {
 						<div class="info-list">
 							<h3 class="info-name">${chip.name}</h3>
 							<p class="info-line"><strong>Adapter:</strong> ${chip.adapter}</p>
-							${chip.readings.map(r => `<p class="info-line"><strong>${r.label}:</strong> ${r.value.toFixed(1)} ${r.unit || ''} ${r.extra || ''}</p>`).join('')}
+							${chip.readings.map(r => {
+								let tempClass = ""
+								if (r.unit === "°C") {
+									if (r.value < 30) tempClass = "temp-info"
+									else if (r.value < 60) tempClass = "temp-success"
+									else if (r.value < 80) tempClass = "temp-warning"
+									else tempClass = "temp-error"
+								}
+								return `<p class="info-line ${tempClass}"><strong>${r.label}:</strong> ${r.value.toFixed(1)}${r.unit || ''} ${r.extra ? `<span class="sensor-extra">${r.extra}</span>` : ''}</p>`
+							}).join('')}
 						</div>
 					</div>
 				`).join('')}
@@ -228,9 +237,11 @@ class DoveDashUI {
 		const down = net.speedDownMbps.toFixed(2)
 		const up = net.speedUpMbps.toFixed(2)
 		const timeAgo = DoveDashUI.formatTimeAgo(Math.floor((Date.now() - new Date(net.lastBenchmark)) / 1000))
-		const interfaceBandwidth = net.bandwidth >= 1000
-			? `${(net.bandwidth / 1000).toFixed(1)} Gb/s`
-			: `${net.bandwidth.toFixed(1)} Mb/s`
+		const interfaceBandwidth = net.bandwidth && net.bandwidth > 0
+			? (net.bandwidth >= 1000
+				? `${(net.bandwidth / 1000).toFixed(1)} Gb/s`
+				: `${net.bandwidth.toFixed(1)} Mb/s`)
+			: "No info"
 
 		return DoveDashUI.dedent(`
 			<div class="info-list">

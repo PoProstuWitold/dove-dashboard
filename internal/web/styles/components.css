@@ -67,3 +67,22 @@
 	color: var(--error-color);
 	font-weight: bold;
 }
+
+.temp-success {
+    color: var(--success-color);
+}
+.temp-warning {
+    color: var(--warning-color);
+}
+.temp-error {
+    color: var(--error-color);
+}
+.temp-info {
+    color: var(--info-color);
+}
+
+.sensor-extra {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--muted-text-color);
+}
