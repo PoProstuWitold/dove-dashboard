@@ -6,9 +6,9 @@ import (
 )
 
 type MemInfo struct {
-	TotalMB     uint64  `json:"totalMB"`
-	UsedMB      uint64  `json:"usedMB"`
-	FreeMB      uint64  `json:"freeMB"`
+	TotalMiB    uint64  `json:"totalMiB"`
+	UsedMiB     uint64  `json:"usedMiB"`
+	FreeMiB     uint64  `json:"freeMiB"`
 	UsedPercent float64 `json:"usedPercent"`
 }
 
@@ -32,9 +32,9 @@ func GetMemInfo() MemInfo {
 	used := total - available
 
 	return MemInfo{
-		TotalMB:     total / 1024,
-		UsedMB:      used / 1024,
-		FreeMB:      available / 1024,
+		TotalMiB:    total / 1024,
+		UsedMiB:     used / 1024,
+		FreeMiB:     available / 1024,
 		UsedPercent: float64(used) / float64(total) * 100,
 	}
 }

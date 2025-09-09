@@ -15,8 +15,8 @@
 * @property {number} frequency
 *
 * @typedef {Object} MemData
-* @property {number} usedMB
-* @property {number} totalMB
+* @property {number} usedMiB
+* @property {number} totalMiB
 * @property {number} usedPercent
 *
 * @typedef {Object} StorageData
@@ -24,9 +24,9 @@
 * @property {string} mountpoint
 * @property {string} fsType
 * @property {string} type
-* @property {number} totalMB
-* @property {number} usedMB
-* @property {number} freeMB
+* @property {number} totalMiB
+* @property {number} usedMiB
+* @property {number} freeMiB
 * @property {number} usedPercent
 *
 * @typedef {Object} SensorReading
@@ -52,12 +52,12 @@ class DoveDashUI {
 	}
 
 	/**
-	* Megabytes to Gigabytes conversion
-	* @param {number} mb
+	* Mebibytes to Gibibytes conversion
+	* @param {number} mib
 	* @returns {string}
 	*/
-	static toGB(mb) {
-		return (mb / 1000).toFixed(2)
+	static toGiB(mib) {
+		return (mib / 1024).toFixed(2)
 	}
 
 	/**
@@ -169,11 +169,11 @@ class DoveDashUI {
 	* @returns {string}
 	*/
 	static formatMem(data) {
-		const used = isFinite(data.usedMB) ? DoveDashUI.toGB(data.usedMB) : '?'
-		const total = isFinite(data.totalMB) ? DoveDashUI.toGB(data.totalMB) : '?'
+		const used = isFinite(data.usedMiB) ? DoveDashUI.toGiB(data.usedMiB) : '?'
+		const total = isFinite(data.totalMiB) ? DoveDashUI.toGiB(data.totalMiB) : '?'
 		const percent = isFinite(data.usedPercent) ? data.usedPercent.toFixed(0) : '?'
 
-		return `<p class="info-line"><strong>Usage:</strong> ${used} GB / ${total} GB (${percent}%)</p>`
+		return `<p class="info-line"><strong>Usage:</strong> ${used} GiB / ${total} GiB (${percent}%)</p>`
 	}
 
 	/**
@@ -182,8 +182,8 @@ class DoveDashUI {
 	* @returns {string}
 	*/
 	static formatStorage(data) {
-		const used = isFinite(data.usedMB) ? DoveDashUI.toGB(data.usedMB) : '?'
-		const total = isFinite(data.totalMB) ? DoveDashUI.toGB(data.totalMB) : '?'
+		const used = isFinite(data.usedMiB) ? DoveDashUI.toGiB(data.usedMiB) : '?'
+		const total = isFinite(data.totalMiB) ? DoveDashUI.toGiB(data.totalMiB) : '?'
 		const percent = isFinite(data.usedPercent) ? data.usedPercent.toFixed(2) : '?'
 		const mount = data.mountpoint || '/'
 		const fs = data.fsType || 'unknown'
@@ -191,7 +191,7 @@ class DoveDashUI {
 		return DoveDashUI.dedent(`
 			<div class="info-list">
 				<p class="info-line"><strong>Type and filesystem:</strong> ${data.type}, ${fs}</p>
-				<p class="info-line"><strong>Disk (${mount}):</strong> ${used} GB / ${total} GB (${percent}%)</p>
+				<p class="info-line"><strong>Disk (${mount}):</strong> ${used} GiB / ${total} GiB (${percent}%)</p>
 			</div>
 		`)
 	}

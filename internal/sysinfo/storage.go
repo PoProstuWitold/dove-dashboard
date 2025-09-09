@@ -13,9 +13,9 @@ type StorageInfo struct {
 	Mountpoint  string  `json:"mountpoint"`
 	FSType      string  `json:"fsType"`
 	Type        string  `json:"type"` // HDD / SSD / NVMe
-	TotalMB     uint64  `json:"totalMB"`
-	UsedMB      uint64  `json:"usedMB"`
-	FreeMB      uint64  `json:"freeMB"`
+	TotalMiB    uint64  `json:"totalMiB"`
+	UsedMiB     uint64  `json:"usedMiB"`
+	FreeMiB     uint64  `json:"freeMiB"`
 	UsedPercent float64 `json:"usedPercent"`
 }
 
@@ -39,9 +39,9 @@ func GetStorageInfo() StorageInfo {
 		Mountpoint:  "/",
 		FSType:      fsType,
 		Type:        detectDiskType(device),
-		TotalMB:     total,
-		UsedMB:      used,
-		FreeMB:      free,
+		TotalMiB:    total,
+		UsedMiB:     used,
+		FreeMiB:     free,
 		UsedPercent: usedPercent,
 	}
 }
