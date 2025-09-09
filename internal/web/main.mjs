@@ -6,6 +6,7 @@
 * @property {string} kernel
 * @property {string} uptime
 * @property {string} hostname
+* @property {string} device
 *
 * @typedef {Object} CPUData
 * @property {string} brand
@@ -143,6 +144,7 @@ class DoveDashUI {
 					<p class="info-line"><strong>Kernel:</strong> ${data.kernel}</p>
 					<p class="info-line"><strong>Uptime:</strong> ${data.uptime}</p>
 					<p class="info-line"><strong>Hostname:</strong> ${data.hostname}</p>
+					<p class="info-line"><strong>Device:</strong> ${data.device}</p>
 				</div>
 			</div>
 		`)

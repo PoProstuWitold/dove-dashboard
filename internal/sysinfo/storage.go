@@ -90,11 +90,17 @@ func detectDiskType(device string) string {
 		}
 	}
 
-	if strings.HasPrefix(devName, "nvme") {
+	phys := resolvePhysicalBlock(devName)
+
+	if strings.HasPrefix(phys, "nvme") {
 		return "NVMe"
 	}
 
-	rotationalPath := ResolveHostPath("/sys/block/" + devName + "/queue/rotational")
+	if strings.HasPrefix(phys, "mmcblk") {
+		return "SSD"
+	}
+
+	rotationalPath := ResolveHostPath("/sys/block/" + phys + "/queue/rotational")
 	data, err := ReadHostOrDefault(rotationalPath)
 	if err != nil {
 		return "Unknown"
@@ -108,4 +114,16 @@ func detectDiskType(device string) string {
 	default:
 		return "Unknown"
 	}
+}
+
+func resolvePhysicalBlock(name string) string {
+	for range 5 {
+		slavesDir := ResolveHostPath("/sys/block/" + name + "/slaves")
+		entries, err := os.ReadDir(slavesDir)
+		if err != nil || len(entries) == 0 {
+			return name
+		}
+		name = entries[0].Name()
+	}
+	return name
 }

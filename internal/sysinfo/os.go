@@ -14,6 +14,7 @@ type OSInfo struct {
 	Kernel   string `json:"kernel"`
 	Uptime   string `json:"uptime"`
 	Hostname string `json:"hostname"`
+	Device   string `json:"device"` // np. "Lenovo 20W00122PB (ThinkPad T14 Gen 2i)"
 }
 
 func GetOSInfo() OSInfo {
@@ -26,6 +27,7 @@ func GetOSInfo() OSInfo {
 		Kernel:   getKernelVersion(),
 		Uptime:   getUptime(),
 		Hostname: getHostname(),
+		Device:   getDeviceInfo(),
 	}
 }
 
@@ -118,4 +120,23 @@ func pluralize(n int, unit string) string {
 		return "1 " + unit
 	}
 	return fmt.Sprintf("%d %ss", n, unit)
+}
+
+func getDeviceInfo() string {
+	vendorData, _ := ReadHostOrDefault("/sys/devices/virtual/dmi/id/sys_vendor")
+	nameData, _ := ReadHostOrDefault("/sys/devices/virtual/dmi/id/product_name")
+	versionData, _ := ReadHostOrDefault("/sys/devices/virtual/dmi/id/product_version")
+
+	vendor := strings.TrimSpace(string(vendorData))
+	name := strings.TrimSpace(string(nameData))
+	version := strings.TrimSpace(string(versionData))
+
+	if vendor == "" && name == "" && version == "" {
+		return "Unknown device"
+	}
+
+	if version != "" {
+		return fmt.Sprintf("%s %s (%s)", vendor, name, version)
+	}
+	return fmt.Sprintf("%s %s", vendor, name)
 }
