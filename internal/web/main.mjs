@@ -263,7 +263,7 @@ class DoveDashUI {
 		DoveDashUI.fetchAndDisplay('/api/mem', 'mem-data', DoveDashUI.formatMem)
 		DoveDashUI.fetchAndDisplay('/api/storage', 'storage-data', DoveDashUI.formatStorage)
 		DoveDashUI.fetchAndDisplay('/api/sensors', 'sensors-data', DoveDashUI.formatSensors)
-		DoveDashUI.fetchAndDisplay('/api/net', 'net-data', DoveDashUI.formatNet)
+		// DoveDashUI.fetchAndDisplay('/api/net', 'net-data', DoveDashUI.formatNet)
 	}
 }
 
