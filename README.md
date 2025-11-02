@@ -27,7 +27,6 @@ services:
     container_name: dove-dashboard
     image: poprostuwitold/dove-dashboard:latest
     restart: unless-stopped
-    user: "10001:10001"
     ports:
       - "2137:2137"
     volumes:
