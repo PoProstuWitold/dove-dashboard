@@ -1,7 +1,7 @@
 package main
 
 import (
-	server "dovedashboard/internal"
+	server "dove-dashboard/internal"
 	"log"
 )
 

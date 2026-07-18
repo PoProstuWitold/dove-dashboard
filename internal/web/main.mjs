@@ -1,6 +1,7 @@
 /**
 * @typedef {Object} OSData
 * @property {string} id
+* @property {string[]} [id_like]
 * @property {string} os
 * @property {string} arch
 * @property {string} kernel
@@ -53,30 +54,102 @@ class DoveDashUI {
 	}
 
 	/**
+	* Normalizes a distro identifier for icon lookups
+	* @param {string | undefined} value
+	* @returns {string}
+	*/
+	static normalizeIconId(value) {
+		return (value || '')
+			.toLowerCase()
+			.trim()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-+|-+$/g, '')
+	}
+
+	/**
+	* Selects a distro-specific icon path
+	* @param {OSData} data
+	* @returns {string}
+	*/
+	static getDistroIconPath(data) {
+		const aliases = {
+			ubuntu: 'ubuntu',
+			kubuntu: 'ubuntu',
+			xubuntu: 'ubuntu',
+			lubuntu: 'ubuntu',
+			debian: 'debian',
+			raspbian: 'debian',
+			fedora: 'fedora',
+			rhel: 'fedora',
+			redhat: 'fedora',
+			centos: 'fedora',
+			rocky: 'fedora',
+			almalinux: 'fedora',
+			arch: 'archlinux',
+			archlinux: 'archlinux',
+			opensuse: 'opensuse',
+			suse: 'opensuse',
+			linuxmint: 'linuxmint',
+			mint: 'linuxmint',
+			manjaro: 'manjaro',
+			alpine: 'alpine',
+			kali: 'kali',
+			pop: 'popos',
+			popos: 'popos',
+			nix: 'nixos',
+			nixos: 'nixos',
+		}
+
+		const searchTerms = [data.id, data.os, ...(data.id_like || [])]
+		for (const term of searchTerms) {
+			const normalized = this.normalizeIconId(term)
+			if (!normalized) continue
+			const alias = aliases[normalized]
+			if (alias) {
+				return `https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/${alias}.svg`
+			}
+		}
+
+		return 'https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/linux.svg'
+	}
+
+	/**
+	* Loads the distro icon as inline SVG from a remote URL
+	* @param {OSData} data
+	* @returns {Promise<string>}
+	*/
+	static async loadDistroIcon(data) {
+		const iconPath = DoveDashUI.getDistroIconPath(data)
+		try {
+			const res = await fetch(iconPath, { headers: { Accept: 'image/svg+xml' }, cache: 'no-store' })
+			if (!res.ok) {
+				return ''
+			}
+			const svg = await res.text()
+
+			return svg
+				.replace(/^<\?xml[\s\S]*?\?>\s*/i, '')
+				.replace(/^<!doctype[\s\S]*?>\s*/i, '')
+				.replace(/fill="#([^"]*)"/gi, 'fill="currentColor"')
+				.replace(/fill='#[^']*'/gi, 'fill="currentColor"')
+				.replace(/stroke="#([^"]*)"/gi, 'stroke="currentColor"')
+				.replace(/stroke='[^']*'/gi, 'stroke="currentColor"')
+				.replace(/<svg\b([^>]*)>/i, '<svg class="distro-icon" focusable="false" aria-hidden="true"$1>')
+				.replace(/\swidth="[^"]*"/gi, '')
+				.replace(/\sheight="[^"]*"/gi, '')
+		} catch (err) {
+			console.error('Failed to load distro icon', err)
+			return ''
+		}
+	}
+
+	/**
 	* Mebibytes to Gibibytes conversion
 	* @param {number} mib
 	* @returns {string}
 	*/
 	static toGiB(mib) {
 		return (mib / 1024).toFixed(2)
-	}
-
-	/**
-	* Downloads an SVG file and returns its content as a string
-	* @param {string} url
-	* @returns {Promise<string>}
-	*/
-	static async inlineSVG(url) {
-		try {
-			let res = await fetch(url)
-			if (!res.ok) {
-				console.warn(`[inlineSVG] Primary failed (${res.status}), using fallback`)
-				res = await fetch('public/icons/tux.svg')
-			}
-			return await res.text()
-		} catch (err) {
-			console.error('[inlineSVG] Both primary and fallback failed', err)
-		}
 	}
 
 	/**
@@ -130,13 +203,12 @@ class DoveDashUI {
 	* @returns {Promise<string>}
 	*/
 	static async formatOS(data) {
-		const iconUrl = `https://raw.githubusercontent.com/lukas-w/font-logos/refs/heads/master/vectors/${data.id}.svg`
-		const svg = await DoveDashUI.inlineSVG(iconUrl)
+		const iconSvg = await DoveDashUI.loadDistroIcon(data)
 
 		return DoveDashUI.dedent(`
 			<div class="info-block">
 				<div class="info-header">
-					<div class="info-icon">${svg}</div>
+					<div class="info-icon">${iconSvg}</div>
 					<span class="info-name">${data.os}</span>
 				</div>
 				<div class="info-list">

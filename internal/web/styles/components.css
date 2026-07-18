@@ -3,6 +3,14 @@
 	gap: 1rem;
 }
 
+.info-block,
+.info-list,
+.info-line,
+.info-header,
+.info-name {
+	min-width: 0;
+}
+
 .info-list {
 	display: grid;
 	gap: 0.3rem;
@@ -10,6 +18,7 @@
 	padding: 0;
 	list-style: none;
 	font-size: 0.95rem;
+	min-width: 0;
 }
 
 .info-line strong{
@@ -20,33 +29,61 @@
 
 .info-line {
 	font-size: 0.95rem;
+	min-width: 0;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 
 .info-header {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
+	flex-wrap: wrap;
+	min-width: 0;
 }
 
 .info-name {
 	font-weight: 600;
 	font-size: 1.15rem;
 	color: var(--text-color);
-	white-space: nowrap;
+	white-space: normal;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	line-height: 1.2;
+	min-width: 0;
 }
 
 .info-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 36px;
-	height: 36px;
+	width: 28px;
+	height: 28px;
+	flex: 0 0 auto;
+	color: var(--text-color);
+	overflow: hidden;
 }
 
 .info-icon svg {
+	display: block;
 	width: 100%;
 	height: 100%;
-	fill: var(--text-color);
+	fill: currentColor;
+	stroke: currentColor;
+	overflow: hidden;
+	max-width: 100%;
+	max-height: 100%;
+}
+
+.info-icon svg.distro-icon {
+	width: 100%;
+	height: 100%;
+	transform: none;
+}
+
+.info-icon svg * {
+	fill: currentColor !important;
+	stroke: currentColor !important;
 }
 
 .sensors-list {
@@ -85,4 +122,16 @@
     font-size: 0.75rem;
     font-style: italic;
     color: var(--muted-text-color);
+}
+
+@media (max-width: 600px) {
+	.info-header {
+		flex-wrap: nowrap;
+		align-items: flex-start;
+	}
+
+	.info-name {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
 }

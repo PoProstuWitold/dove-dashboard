@@ -1,7 +1,7 @@
 package api
 
 import (
-	"dovedashboard/internal/sysinfo"
+	"dove-dashboard/internal/sysinfo"
 	"encoding/json"
 	"net/http"
 )

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"dovedashboard/internal/api"
+	"dove-dashboard/internal/api"
 	"embed"
 	"io/fs"
 	"log"

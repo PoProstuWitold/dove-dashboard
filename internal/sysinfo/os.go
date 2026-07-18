@@ -8,20 +8,22 @@ import (
 )
 
 type OSInfo struct {
-	Id       string `json:"id"`
-	OSName   string `json:"os"`
-	Arch     string `json:"arch"`
-	Kernel   string `json:"kernel"`
-	Uptime   string `json:"uptime"`
-	Hostname string `json:"hostname"`
-	Device   string `json:"device"` // np. "Lenovo 20W00122PB (ThinkPad T14 Gen 2i)"
+	Id       string   `json:"id"`
+	IDLike   []string `json:"id_like,omitempty"`
+	OSName   string   `json:"os"`
+	Arch     string   `json:"arch"`
+	Kernel   string   `json:"kernel"`
+	Uptime   string   `json:"uptime"`
+	Hostname string   `json:"hostname"`
+	Device   string   `json:"device"` // np. "Lenovo 20W00122PB (ThinkPad T14 Gen 2i)"
 }
 
 func GetOSInfo() OSInfo {
-	name, id := getOSInfoFields()
+	name, id, like := getOSInfoFields()
 
 	return OSInfo{
 		Id:       id,
+		IDLike:   like,
 		OSName:   name,
 		Arch:     getArch(),
 		Kernel:   getKernelVersion(),
@@ -47,10 +49,10 @@ func getHostname() string {
 	return strings.TrimSpace(string(data))
 }
 
-func getOSInfoFields() (name, id string) {
+func getOSInfoFields() (name, id string, like []string) {
 	data, err := ReadHostOrDefault("/etc/os-release")
 	if err != nil {
-		return "Unknown OS", "unknown"
+		return "Unknown OS", "unknown", nil
 	}
 
 	lines := strings.SplitSeq(string(data), "\n")
@@ -60,6 +62,12 @@ func getOSInfoFields() (name, id string) {
 		}
 		if strings.HasPrefix(line, "ID=") {
 			id = strings.Trim(strings.SplitN(line, "=", 2)[1], `"`)
+		}
+		if strings.HasPrefix(line, "ID_LIKE=") {
+			likeValue := strings.Trim(strings.SplitN(line, "=", 2)[1], `"`)
+			if likeValue != "" {
+				like = strings.Fields(likeValue)
+			}
 		}
 	}
 
