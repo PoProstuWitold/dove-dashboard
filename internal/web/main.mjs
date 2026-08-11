@@ -31,6 +31,15 @@
 * @property {number} freeMiB
 * @property {number} usedPercent
 *
+* @typedef {Object} NetInfo
+* @property {string} name
+* @property {string} type
+* @property {number} linkSpeed
+* @property {number} rxBytes
+* @property {number} txBytes
+* @property {number} rxThroughput
+* @property {number} txThroughput
+*
 * @typedef {Object} SensorReading
 * @property {string} label
 * @property {number} value
@@ -68,48 +77,57 @@ class DoveDashUI {
 
 	/**
 	* Selects a distro-specific icon path
+	* Tries exact ID match first, then ID_LIKE, then generic Linux fallback
 	* @param {OSData} data
 	* @returns {string}
 	*/
 	static getDistroIconPath(data) {
-		const aliases = {
-			ubuntu: 'ubuntu',
-			kubuntu: 'ubuntu',
-			xubuntu: 'ubuntu',
-			lubuntu: 'ubuntu',
-			debian: 'debian',
-			raspbian: 'debian',
-			fedora: 'fedora',
-			rhel: 'fedora',
-			redhat: 'fedora',
-			centos: 'fedora',
-			rocky: 'fedora',
-			almalinux: 'fedora',
-			arch: 'archlinux',
-			archlinux: 'archlinux',
-			opensuse: 'opensuse',
-			suse: 'opensuse',
-			linuxmint: 'linuxmint',
-			mint: 'linuxmint',
-			manjaro: 'manjaro',
-			alpine: 'alpine',
-			kali: 'kali',
-			pop: 'popos',
-			popos: 'popos',
-			nix: 'nixos',
-			nixos: 'nixos',
+		// Map of normalized IDs to their Simple Icons slugs
+		const iconMap = {
+			'almalinux': 'almalinux',
+			'endeavouros': 'endeavouros',
+			'rockylinux': 'rockylinux',
+			'centos': 'centos',
+			'rhel': 'redhat',
+			'redhat': 'redhat',
+			'fedora': 'fedora',
+			'debian': 'debian',
+			'ubuntu': 'ubuntu',
+			'kubuntu': 'kubuntu',
+			'lubuntu': 'lubuntu',
+			'ubuntumate': 'ubuntumate',
+			'arch': 'archlinux',
+			'archlinux': 'archlinux',
+			'alpine': 'alpinelinux',
+			'alpinelinux': 'alpinelinux',
+			'kali': 'kalilinux',
+			'kalilinux': 'kalilinux',
+			'linuxmint': 'linuxmint',
+			'manjaro': 'manjaro',
+			'opensuse': 'opensuse',
+			'popos': 'popos',
+			'nixos': 'nixos',
+			'raspberrypi': 'raspberrypi',
+			'raspbian': 'raspberrypi',
 		}
 
-		const searchTerms = [data.id, data.os, ...(data.id_like || [])]
-		for (const term of searchTerms) {
-			const normalized = this.normalizeIconId(term)
-			if (!normalized) continue
-			const alias = aliases[normalized]
-			if (alias) {
-				return `https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/${alias}.svg`
+		// Try exact ID match first
+		const normalized = this.normalizeIconId(data.id)
+		if (normalized && iconMap[normalized]) {
+			return `https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/${iconMap[normalized]}.svg`
+		}
+
+		// Try ID_LIKE parents (but avoid generic fallbacks)
+		if (data.id_like && Array.isArray(data.id_like)) {
+			for (const likeId of data.id_like) {
+				const normalizedLike = this.normalizeIconId(likeId)
+				if (normalizedLike && iconMap[normalizedLike]) {
+					return `https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/${iconMap[normalizedLike]}.svg`
+				}
 			}
 		}
 
+		// Generic Linux fallback
 		return 'https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/linux.svg'
 	}
 
@@ -252,20 +270,35 @@ class DoveDashUI {
 
 	/**
 	* Formats the storage data into HTML 
-	* @param {StorageData} data
+	* @param {StorageData[]} data
 	* @returns {string}
 	*/
 	static formatStorage(data) {
-		const used = isFinite(data.usedMiB) ? DoveDashUI.toGiB(data.usedMiB) : '?'
-		const total = isFinite(data.totalMiB) ? DoveDashUI.toGiB(data.totalMiB) : '?'
-		const percent = isFinite(data.usedPercent) ? data.usedPercent.toFixed(2) : '?'
-		const mount = data.mountpoint || '/'
-		const fs = data.fsType || 'unknown'
+		if (!Array.isArray(data) || data.length === 0) {
+			return '<p class="info-line">No storage information available</p>'
+		}
 
 		return DoveDashUI.dedent(`
-			<div class="info-list">
-				<p class="info-line"><strong>Type and filesystem:</strong> ${data.type}, ${fs}</p>
-				<p class="info-line"><strong>Disk (${mount}):</strong> ${used} GiB / ${total} GiB (${percent}%)</p>
+			<div class="storage-list">
+				${data.map(storage => {
+					const used = isFinite(storage.usedMiB) ? DoveDashUI.toGiB(storage.usedMiB) : '?'
+					const total = isFinite(storage.totalMiB) ? DoveDashUI.toGiB(storage.totalMiB) : '?'
+					const percent = isFinite(storage.usedPercent) ? storage.usedPercent.toFixed(1) : '?'
+					const mount = storage.mountpoint || '/'
+					const fs = storage.fsType || 'unknown'
+					const type = storage.type || 'Unknown'
+
+					return `
+						<div class="info-block">
+							<div class="info-list">
+								<p class="info-line"><strong>Mount:</strong> ${mount}</p>
+								<p class="info-line"><strong>Type:</strong> ${type}, ${fs}</p>
+								<p class="info-line"><strong>Device:</strong> ${storage.device}</p>
+								<p class="info-line"><strong>Usage:</strong> ${used} GiB / ${total} GiB (${percent}%)</p>
+							</div>
+						</div>
+					`
+				}).join('')}
 			</div>
 		`)
 	}
@@ -302,27 +335,21 @@ class DoveDashUI {
 
 	/**
 	* Formats the network data into HTML
-	* @param {NetStats[]} data
+	* @param {NetInfo} data
 	* @returns {string}
 	*/
 	static formatNet(data) {
-		const net = data[0]
+		if (!data) {
+			return '<p class="info-line">Network information unavailable</p>'
+		}
 
-		const down = net.speedDownMbps.toFixed(2)
-		const up = net.speedUpMbps.toFixed(2)
-		const timeAgo = DoveDashUI.formatTimeAgo(Math.floor((Date.now() - new Date(net.lastBenchmark)) / 1000))
-		const interfaceBandwidth = net.bandwidth && net.bandwidth > 0
-			? (net.bandwidth >= 1000
-				? `${(net.bandwidth / 1000).toFixed(1)} Gb/s`
-				: `${net.bandwidth.toFixed(1)} Mb/s`)
-			: "No info"
+		const interfaceName = data.interface || 'Unknown'
+		const type = data.type || 'unknown'
 
 		return DoveDashUI.dedent(`
 			<div class="info-list">
-				<p class="info-line"><strong>Interface:</strong> ${net.name} (${net.type})</p>
-				<p class="info-line"><strong>Bandwidth:</strong> ${interfaceBandwidth} </p>
-				<p class="info-line"><strong>Download/Upload:</strong> ↓ ${down} Mb/s / ↑ ${up} Mb/s </p>
-				<p class="info-line"><strong>Last benchmark:</strong> ${new Date(net.lastBenchmark).toLocaleString('en-GB')} (${timeAgo})</p>
+				<p class="info-line"><strong>Interface:</strong> ${interfaceName}</p>
+				<p class="info-line"><strong>Type:</strong> ${type}</p>
 			</div>
 		`)
 	}
@@ -337,7 +364,7 @@ class DoveDashUI {
 		DoveDashUI.fetchAndDisplay('/api/mem', 'mem-data', DoveDashUI.formatMem)
 		DoveDashUI.fetchAndDisplay('/api/storage', 'storage-data', DoveDashUI.formatStorage)
 		DoveDashUI.fetchAndDisplay('/api/sensors', 'sensors-data', DoveDashUI.formatSensors)
-		// DoveDashUI.fetchAndDisplay('/api/net', 'net-data', DoveDashUI.formatNet)
+		DoveDashUI.fetchAndDisplay('/api/net', 'net-data', DoveDashUI.formatNet)
 	}
 }
 

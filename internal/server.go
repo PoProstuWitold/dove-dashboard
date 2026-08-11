@@ -20,8 +20,7 @@ func Start() error {
 	mux.HandleFunc("/api/storage", api.HandleStorage)
 	mux.HandleFunc("/api/sensors", api.HandleSensors)
 	mux.HandleFunc("/api/os", api.HandleOs)
-	// TODO: fix network stats
-	// mux.HandleFunc("/api/net", api.HandleNet)
+	mux.HandleFunc("/api/net", api.HandleNet)
 
 	// Static frontend
 	subFS, err := fs.Sub(content, "web")

@@ -1,132 +1,124 @@
 package sysinfo
 
 import (
-	"bytes"
-	"fmt"
-	"io"
-	"net/http"
+	"net"
 	"os"
-	"os/exec"
-	"strconv"
+	"path/filepath"
 	"strings"
-	"sync"
-	"time"
 )
 
-var (
-	lastBenchmark time.Time
-	benchmarkLock sync.Mutex
-	benchmarkData []NetStats
-)
-
-type NetStats struct {
-	Name          string    `json:"name"`
-	Type          string    `json:"type"`
-	SpeedUpMbps   float64   `json:"speedUpMbps"`
-	SpeedDownMbps float64   `json:"speedDownMbps"`
-	Bandwidth     float64   `json:"bandwidth"`
-	LastBenchmark time.Time `json:"lastBenchmark"`
+type NetInfo struct {
+	Interface string `json:"interface"`
+	Type      string `json:"type"`
 }
 
-func GetNetInfo() []NetStats {
-	benchmarkLock.Lock()
-	defer benchmarkLock.Unlock()
+func GetNetInfo() *NetInfo {
+	iface := defaultInterface()
+	if iface == "" {
+		return nil
+	}
 
-	if time.Since(lastBenchmark) < 4*time.Hour && len(benchmarkData) > 0 {
-		for i := range benchmarkData {
-			benchmarkData[i].LastBenchmark = lastBenchmark
+	return &NetInfo{
+		Interface: iface,
+		Type:      interfaceType(iface),
+	}
+}
+
+func defaultInterface() string {
+	if data, err := ReadHostOrDefault("/proc/net/route"); err == nil {
+		for _, line := range strings.Split(string(data), "\n") {
+			fields := strings.Fields(line)
+			if len(fields) >= 2 &&
+				fields[1] == "00000000" &&
+				usableInterface(fields[0]) {
+				return fields[0]
+			}
 		}
-		return benchmarkData
 	}
 
-	benchmarkData = runHeavyBenchmark()
-	lastBenchmark = time.Now()
-
-	for i := range benchmarkData {
-		benchmarkData[i].LastBenchmark = lastBenchmark
-	}
-
-	return benchmarkData
-}
-
-func getDefaultInterface() string {
-	out, err := exec.Command("ip", "route", "show", "default").Output()
+	entries, err := os.ReadDir(ResolveHostPath("/sys/class/net"))
 	if err != nil {
 		return ""
 	}
-	fields := strings.Fields(string(out))
-	for i, f := range fields {
-		if f == "dev" && i+1 < len(fields) {
-			return fields[i+1]
+
+	for _, entry := range entries {
+		iface := entry.Name()
+		if usableInterface(iface) && interfaceUp(iface) {
+			return iface
 		}
 	}
+
 	return ""
 }
 
-func readInterfaceSpeed(name string) float64 {
-	speedPath := fmt.Sprintf("/sys/class/net/%s/speed", name)
-	data, err := os.ReadFile(speedPath)
-	if err != nil {
-		return 0
+func usableInterface(iface string) bool {
+	if iface == "" ||
+		iface == "lo" ||
+		strings.HasPrefix(iface, "docker") ||
+		strings.HasPrefix(iface, "veth") ||
+		strings.HasPrefix(iface, "br-") {
+		return false
 	}
-	speed := strings.TrimSpace(string(data))
-	val, _ := strconv.ParseFloat(speed, 64)
-	return val
+
+	// eth0 is valid on a normal host, but is usually Docker's interface
+	// when the dashboard runs inside the existing container setup.
+	if iface == "eth0" && hostMounted() {
+		return false
+	}
+
+	return true
 }
 
-func detectInterfaceType(name string) string {
-	if strings.HasPrefix(name, "w") {
-		return "wireless"
-	}
-	return "wired"
+func interfaceUp(iface string) bool {
+	data, err := os.ReadFile(
+		ResolveHostPath(filepath.Join("/sys/class/net", iface, "operstate")),
+	)
+	return err == nil && strings.TrimSpace(string(data)) == "up"
 }
 
-func runHeavyBenchmark() []NetStats {
-	defaultIface := getDefaultInterface()
-	if defaultIface == "" {
-		return nil
+func interfaceType(iface string) string {
+	wireless := ResolveHostPath(filepath.Join("/sys/class/net", iface, "wireless"))
+
+	if _, err := os.Stat(wireless); err == nil {
+		return "wifi"
 	}
 
-	dlStart := time.Now()
-	resp, err := http.Get("http://speedtest.tele2.net/100MB.zip")
+	if strings.HasPrefix(iface, "wl") {
+		return "wifi"
+	}
+
+	return "ethernet"
+}
+
+func interfaceIP(iface string) string {
+	// net.InterfaceByName operates in the current network namespace.
+	// Therefore this is reliable when running directly on the host,
+	// but not for host interfaces while running inside Docker.
+	if hostMounted() {
+		return ""
+	}
+
+	device, err := net.InterfaceByName(iface)
 	if err != nil {
-		fmt.Printf("Download test error: %v\n", err)
-		return nil
+		return ""
 	}
-	defer resp.Body.Close()
 
-	written, _ := io.Copy(io.Discard, resp.Body)
-	dlDuration := time.Since(dlStart).Seconds()
-	speedDownMbps := float64(written*8) / (dlDuration * 1_000_000)
-
-	ulStart := time.Now()
-	testData := bytes.NewReader(make([]byte, 50*1024*1024))
-
-	req, err := http.NewRequest("PUT", "http://speedtest.tele2.net/upload.php", testData)
+	addrs, err := device.Addrs()
 	if err != nil {
-		fmt.Printf("Upload test setup error: %v\n", err)
-		return nil
+		return ""
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
-	ulResp, err := client.Do(req)
-	if err != nil {
-		fmt.Printf("Upload test error: %v\n", err)
-		return nil
+	for _, addr := range addrs {
+		ip, _, err := net.ParseCIDR(addr.String())
+		if err == nil && ip.To4() != nil && !ip.IsLoopback() {
+			return ip.String()
+		}
 	}
-	defer ulResp.Body.Close()
 
-	ulDuration := time.Since(ulStart).Seconds()
-	speedUpMbps := float64(50*8*1024*1024) / (ulDuration * 1_000_000)
+	return ""
+}
 
-	return []NetStats{
-		{
-			Name:          defaultIface,
-			Type:          detectInterfaceType(defaultIface),
-			SpeedDownMbps: speedDownMbps,
-			SpeedUpMbps:   speedUpMbps,
-			Bandwidth:     readInterfaceSpeed(defaultIface),
-			LastBenchmark: time.Now(),
-		},
-	}
+func hostMounted() bool {
+	_, err := os.Stat("/mnt/host")
+	return err == nil
 }

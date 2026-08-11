@@ -12,7 +12,7 @@ A lightweight, simple and peaceful web-based system monitor - written in Go, wit
 - **CPU** - brand, model, cores, threads, frequency.
 - **Memory & storage** - usage, free/used/total.
 - **Sensors** - temperatures and voltages (where available).
-- **Network** - main interface, bandwith, upload and download speed with benchmark every 4 hours.
+- **Network** - main network interface.
 - **Live updates** - refreshes every 10 seconds.
 - **Minimal UI** - simple and elegant.
 - **Self-contained** - single binary + static assets.

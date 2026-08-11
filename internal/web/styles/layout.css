@@ -100,7 +100,8 @@
 		line-height: 1.2;
 	}
 
-	.sensors-list .info-block {
+	.sensors-list .info-block,
+	.storage-list .info-block {
 		padding: 0.4rem 0;
 	}
 }
@@ -129,5 +130,32 @@
 
 	.info-name {
 		font-size: 0.95rem;
+	}
+}
+
+.site-footer {
+	text-align: center;
+	padding: 1.5rem 1rem;
+	margin-top: 2rem;
+	border-top: 1px solid var(--border-color);
+	font-size: 0.85rem;
+}
+
+.site-footer a {
+	color: var(--text-color);
+	text-decoration: none;
+	opacity: 0.7;
+	transition: opacity 0.2s ease;
+}
+
+.site-footer a:hover {
+	opacity: 1;
+	text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+	.site-footer {
+		padding: 1rem 0.75rem;
+		font-size: 0.8rem;
 	}
 }

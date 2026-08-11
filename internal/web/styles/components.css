@@ -86,18 +86,20 @@
 	stroke: currentColor !important;
 }
 
-.sensors-list {
-    display: flex;
-    flex-direction: column;
+.sensors-list, .storage-list {
+	display: flex;
+	flex-direction: column;
 }
 
-.sensors-list .info-block {
-    padding: 0.5rem 0;
-    border-bottom: 3px solid var(--border-color);
+.sensors-list .info-block,
+.storage-list .info-block {
+	padding: 0.5rem 0;
+	border-bottom: 3px solid var(--border-color);
 }
 
-.sensors-list .info-block:last-child {
-    border-bottom: none;
+.sensors-list .info-block:last-child,
+.storage-list .info-block:last-child {
+	border-bottom: none;
 }
 
 .error-line {
